@@ -5,34 +5,31 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para makabasa ng JSON requests
 app.use(express.json({ limit: "100kb" }));
 
-// Serve frontend files mula sa public folder
+// Serve frontend files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Home route
+// Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Health check para malaman kung gumagana ang server
+// Backend health check
 app.get("/api/health", (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     message: "EcoScan backend is running"
   });
 });
 
-// Test endpoint para sa scan result
-// Hindi ito nagse-save sa database.
-// Local Storage sa frontend ang bahala sa permanenteng browser storage.
+// Receive scan result
 app.post("/api/scans", (req, res) => {
   const { predictedClass, confidence } = req.body || {};
 
   if (
     typeof predictedClass !== "string" ||
-    predictedClass.trim().length === 0 ||
+    !predictedClass.trim() ||
     predictedClass.length > 100
   ) {
     return res.status(400).json({
@@ -49,12 +46,11 @@ app.post("/api/scans", (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
-      message: "Confidence must be a number from 0 to 1"
+      message: "Confidence must be between 0 and 1"
     });
   }
 
-  // Temporary response lamang
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     message: "Scan result received",
     scan: {
@@ -65,7 +61,7 @@ app.post("/api/scans", (req, res) => {
   });
 });
 
-// Handle invalid API routes
+// Handle unknown API routes
 app.use("/api", (req, res) => {
   res.status(404).json({
     success: false,
@@ -73,11 +69,6 @@ app.use("/api", (req, res) => {
   });
 });
 
-// Start server
 app.listen(PORT, () => {
-  console.log("--------------------------------");
-  console.log("EcoScan Backend Started");
-  console.log(`Website: http://localhost:${PORT}`);
-  console.log(`API Test: http://localhost:${PORT}/api/health`);
-  console.log("--------------------------------");
+  console.log(`EcoScan running at http://localhost:${PORT}`);
 });
